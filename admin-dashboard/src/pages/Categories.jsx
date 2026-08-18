@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import api from '../api/client';
-import { CONTENT_TYPES } from '../config/contentTypes';
+import { CONTENT_TYPES, PUBLIC_SITE_URL } from '../config/contentTypes';
+import { collectionPageSchema } from '../config/schemaTemplates';
+import { applyPlaceholders } from '../utils/schemaPlaceholders';
 
 export default function Categories() {
   const [categories, setCategories] = useState([]);
@@ -11,6 +13,8 @@ export default function Categories() {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null);
   const [editingSchema, setEditingSchema] = useState('');
+  const [savedTemplates, setSavedTemplates] = useState([]);
+  const [templateChoice, setTemplateChoice] = useState('');
 
   const load = useCallback(() => {
     setLoading(true);
@@ -22,6 +26,7 @@ export default function Categories() {
 
   useEffect(() => {
     load();
+    api.get('/schema-templates', { params: { appliesTo: 'category' } }).then((res) => setSavedTemplates(res.data));
   }, [load]);
 
   const handleCreate = async (e) => {
@@ -52,6 +57,25 @@ export default function Categories() {
     await api.put(`/categories/${id}`, { customSchema: editingSchema });
     setEditingId(null);
     load();
+  };
+
+  const generateSchemaFor = (cat) => {
+    const url = `${PUBLIC_SITE_URL}${cat.url || ''}`;
+    const schema = collectionPageSchema(cat.name, cat.description, url);
+    setEditingSchema(JSON.stringify(schema, null, 2));
+  };
+
+  const applySavedTemplate = (cat) => {
+    const template = savedTemplates.find((t) => t._id === templateChoice);
+    if (!template) return;
+    const url = `${PUBLIC_SITE_URL}${cat.url || ''}`;
+    const filled = applyPlaceholders(template.template, {
+      categoryName: cat.name,
+      categoryDescription: cat.description || '',
+      url,
+      siteName: 'ToolsBattle',
+    });
+    setEditingSchema(filled);
   };
 
   return (
@@ -143,6 +167,33 @@ export default function Categories() {
                     </div>
                     {editingId === c._id && (
                       <div className="mt-2">
+                        <div className="flex gap-2 mb-1.5">
+                          <select
+                            value={templateChoice}
+                            onChange={(e) => setTemplateChoice(e.target.value)}
+                            className="flex-1 border border-mist-200 rounded-lg px-2 py-1.5 text-xs bg-white"
+                          >
+                            <option value="">Your saved templates…</option>
+                            {savedTemplates.map((t) => (
+                              <option key={t._id} value={t._id}>
+                                {t.name}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            disabled={!templateChoice}
+                            onClick={() => applySavedTemplate(c)}
+                            className="text-xs bg-battle-blue text-white px-3 py-1.5 rounded-lg disabled:opacity-40"
+                          >
+                            Apply
+                          </button>
+                        </div>
+                        <button
+                          onClick={() => generateSchemaFor(c)}
+                          className="text-xs border border-mist-200 px-3 py-1.5 rounded-lg mb-1.5"
+                        >
+                          Or auto-generate a basic one
+                        </button>
                         <textarea
                           value={editingSchema}
                           onChange={(e) => setEditingSchema(e.target.value)}

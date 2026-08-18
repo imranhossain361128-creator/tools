@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../api/client';
 import { getTypeConfig, publicUrlFor } from '../config/contentTypes';
+import { SCHEMA_OPTIONS_BY_TYPE } from '../config/schemaTemplates';
+import { buildSlug } from '../utils/slugify';
+import { applyPlaceholders } from '../utils/schemaPlaceholders';
 
 const emptyTool = () => ({ name: '', logo: '', rating: 0, pricing: '', pros: [''], cons: [''], affiliateUrl: '' });
 
@@ -27,6 +30,8 @@ export default function ContentEditor() {
 
   const [form, setForm] = useState(emptyForm());
   const [slug, setSlug] = useState('');
+  const [schemaChoice, setSchemaChoice] = useState('');
+  const [savedTemplates, setSavedTemplates] = useState([]);
   const [categories, setCategories] = useState([]);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -34,6 +39,7 @@ export default function ContentEditor() {
 
   useEffect(() => {
     api.get('/categories', { params: { type } }).then((res) => setCategories(res.data));
+    api.get('/schema-templates', { params: { appliesTo: type } }).then((res) => setSavedTemplates(res.data));
   }, [type]);
 
   useEffect(() => {
@@ -91,6 +97,37 @@ export default function ContentEditor() {
 
   const addTool = () => setForm((f) => ({ ...f, tools: [...f.tools, emptyTool()] }));
   const removeTool = (idx) => setForm((f) => ({ ...f, tools: f.tools.filter((_, i) => i !== idx) }));
+
+  const schemaOptions = SCHEMA_OPTIONS_BY_TYPE[type] || [];
+
+  const handleGenerateSchema = () => {
+    const previewSlug = slug || (form.mainKeyword ? buildSlug(type, form.mainKeyword) : 'your-page');
+    const url = publicUrlFor(type, previewSlug);
+
+    if (schemaChoice.startsWith('saved:')) {
+      const id = schemaChoice.replace('saved:', '');
+      const saved = savedTemplates.find((t) => t._id === id);
+      if (!saved) return;
+      const tool = form.tools?.[0];
+      const filled = applyPlaceholders(saved.template, {
+        title: form.title,
+        excerpt: form.excerpt,
+        url,
+        siteName: 'ToolsBattle',
+        date: new Date().toISOString().slice(0, 10),
+        toolName: tool?.name || '',
+        rating: tool?.rating || '',
+        pricing: tool?.pricing || '',
+      });
+      update('customSchema', filled);
+      return;
+    }
+
+    const option = schemaOptions.find((o) => o.key === schemaChoice);
+    if (!option) return;
+    const schema = option.build(form, url);
+    update('customSchema', JSON.stringify(schema, null, 2));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -362,17 +399,50 @@ export default function ContentEditor() {
             <label className="block text-xs font-medium text-ink-600 mb-1.5">
               Custom Schema (JSON-LD structured data)
             </label>
+            <div className="flex gap-2 mb-2">
+              <select
+                value={schemaChoice}
+                onChange={(e) => setSchemaChoice(e.target.value)}
+                className="flex-1 border border-mist-200 rounded-lg px-3 py-2 text-sm bg-white"
+              >
+                <option value="">Choose a schema…</option>
+                {savedTemplates.length > 0 && (
+                  <optgroup label="Your saved templates">
+                    {savedTemplates.map((t) => (
+                      <option key={t._id} value={`saved:${t._id}`}>
+                        {t.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                <optgroup label="Built-in templates">
+                  {schemaOptions.map((o) => (
+                    <option key={o.key} value={o.key}>
+                      {o.label}
+                    </option>
+                  ))}
+                </optgroup>
+              </select>
+              <button
+                type="button"
+                disabled={!schemaChoice}
+                onClick={handleGenerateSchema}
+                className="text-sm font-medium bg-battle-blue text-white px-4 py-2 rounded-lg disabled:opacity-40 hover:opacity-90"
+              >
+                Generate
+              </button>
+            </div>
             <textarea
               value={form.customSchema}
               onChange={(e) => update('customSchema', e.target.value)}
-              rows={6}
-              placeholder={'{\n  "@context": "https://schema.org",\n  "@type": "Review",\n  ...\n}'}
-              className="w-full border border-mist-200 rounded-lg px-3 py-2 text-sm font-mono"
+              rows={8}
+              placeholder="Pick a schema type above and click Generate — it will fill in this box using this post's title, excerpt, and tool info."
+              className="w-full border border-mist-200 rounded-lg px-3 py-2 text-xs font-mono"
             />
             <p className="text-xs text-ink-600 mt-1">
-              Optional. Paste raw JSON-LD (or a full <code className="bg-mist-100 px-1 rounded">&lt;script&gt;</code>{' '}
-              tag from a schema generator) — it gets injected into this page's{' '}
-              <code className="bg-mist-100 px-1 rounded">&lt;head&gt;</code> automatically. Leave blank to skip.
+              Auto-generated from this post's data. You can still edit the JSON by hand after generating,
+              or leave it blank to skip structured data for this page. Write reusable templates once in{' '}
+              <Link to="/schema-templates" className="text-battle-blue">Schema Templates</Link>.
             </p>
           </div>
         </div>
