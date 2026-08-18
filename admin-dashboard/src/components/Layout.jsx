@@ -86,6 +86,14 @@ export default function Layout() {
           >
             Site Settings
           </NavLink>
+          <NavLink
+            to="/schema-templates"
+            className={({ isActive }) =>
+              `${navItemBase} ${isActive ? 'bg-battle-blue text-white' : 'text-white/70 hover:bg-white/5 hover:text-white'}`
+            }
+          >
+            Schema Templates
+          </NavLink>
         </nav>
 
         <div className="px-4 py-4 border-t border-white/10">
