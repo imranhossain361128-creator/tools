@@ -10,6 +10,7 @@ import Pages from './pages/Pages';
 import AffiliateStats from './pages/AffiliateStats';
 import ReviewsManager from './pages/ReviewsManager';
 import Settings from './pages/Settings';
+import SchemaTemplates from './pages/SchemaTemplates';
 
 function ProtectedRoute({ children }) {
   const { isAuthed } = useAuth();
@@ -37,6 +38,7 @@ function AppRoutes() {
         <Route path="pages" element={<Pages />} />
         <Route path="affiliate" element={<AffiliateStats />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="schema-templates" element={<SchemaTemplates />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
