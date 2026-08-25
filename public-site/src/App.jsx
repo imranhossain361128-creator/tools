@@ -4,10 +4,12 @@ import Footer from './components/Footer';
 import Home from './pages/Home';
 import Blog from './pages/Blog';
 import TopicListing from './pages/TopicListing';
+import CategoryPage from './pages/CategoryPage';
 import Directory from './pages/Directory';
 import DirectoryDetail from './pages/DirectoryDetail';
 import ReviewsDirectory from './pages/ReviewsDirectory';
 import ReviewDetail from './pages/ReviewDetail';
+import ComparisonDetail from './pages/ComparisonDetail';
 import SingleContent from './pages/SingleContent';
 import ComingSoon from './pages/ComingSoon';
 
@@ -29,6 +31,7 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:type" element={<TopicListing />} />
+          <Route path="/category/:slug" element={<CategoryPage />} />
           <Route path="/ai-tools-directory" element={<Directory />} />
           <Route path="/reviews" element={<ReviewsDirectory />} />
 
@@ -37,7 +40,7 @@ export default function App() {
           <Route path="/alternatives/:slug" element={<SingleContent type="alternative" />} />
           <Route path="/statistics/:slug" element={<SingleContent type="statistic" />} />
           <Route path="/ai-tools-directory/:slug" element={<DirectoryDetail />} />
-          <Route path="/:slug" element={<SingleContent type="comparison" />} />
+          <Route path="/:slug" element={<ComparisonDetail />} />
 
           <Route path="*" element={<ComingSoon />} />
         </Routes>
