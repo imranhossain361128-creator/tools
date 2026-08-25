@@ -21,6 +21,7 @@ app.use('/api/analytics', require('./routes/analytics'));
 app.use('/api/reviews', require('./routes/reviews'));
 app.use('/api/settings', require('./routes/settings'));
 app.use('/api/schema-templates', require('./routes/schemaTemplates'));
+app.use('/api/authors', require('./routes/authors'));
 
 // Fallback error handler
 app.use((err, req, res, next) => {
