@@ -48,6 +48,8 @@ const ContentSchema = new mongoose.Schema(
     customSchema: { type: String, default: '' }, // raw JSON-LD (or a full <script> tag) pasted by an editor
     status: { type: String, enum: ['draft', 'published'], default: 'draft' },
     author: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    authorProfile: { type: mongoose.Schema.Types.ObjectId, ref: 'Author' }, // "By ..." byline shown on the live page
+    reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Author' }, // optional "Reviewed by ..." credit
     views: { type: Number, default: 0 },
     publishedAt: { type: Date },
   },
