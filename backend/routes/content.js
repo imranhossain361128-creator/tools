@@ -43,6 +43,9 @@ router.get('/', async (req, res) => {
     const [items, total] = await Promise.all([
       Content.find(filter)
         .populate('category', 'name slug type')
+        .populate('author', 'name')
+        .populate('authorProfile')
+        .populate('reviewedBy')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(Number(limit)),
@@ -58,7 +61,10 @@ router.get('/', async (req, res) => {
 // GET /api/content/:id
 router.get('/:id', async (req, res) => {
   try {
-    const item = await Content.findById(req.params.id).populate('category', 'name slug type');
+    const item = await Content.findById(req.params.id)
+      .populate('category', 'name slug type')
+      .populate('authorProfile')
+      .populate('reviewedBy');
     if (!item) return res.status(404).json({ message: 'Not found' });
     res.json(item);
   } catch (err) {
@@ -74,7 +80,11 @@ router.get('/public/:type/:slug', async (req, res) => {
       { type, slug, status: 'published' },
       { $inc: { views: 1 } },
       { new: true }
-    ).populate('category', 'name slug type');
+    )
+      .populate('category', 'name slug type')
+      .populate('author', 'name')
+      .populate('authorProfile')
+      .populate('reviewedBy');
     if (!item) return res.status(404).json({ message: 'Not found' });
     res.json(item);
   } catch (err) {
